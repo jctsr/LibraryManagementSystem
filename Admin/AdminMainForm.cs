@@ -280,6 +280,10 @@ namespace LibraryManagementSystem
 
       this.Controls.Add(ManageBooksPanel);
 
+      DisplayAllBooks();
+      DisplayAvailableBooks();
+      DisplayIssuedBooks();
+      DisplayReturnedBooks();
 
       // Get the current DPI scale factor
       float dpiScale = this.DeviceDpi / 96f; // 96 DPI is the default
