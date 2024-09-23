@@ -9,7 +9,12 @@
 	<ApplicationHighDpiMode>SystemAware</ApplicationHighDpiMode>
     <ForceDesignerDpiUnaware>true</ForceDesignerDpiUnaware>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>download-icon-book-131976794623339327_32.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="download-icon-book-131976794623339327_32.ico" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Data.SqlClient" Version="4.8.6" />

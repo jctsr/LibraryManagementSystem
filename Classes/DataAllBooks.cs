@@ -10,7 +10,9 @@ namespace LibraryManagementSystem.Classes
 {
   public class DataAllBooks
   {
-    private string _connect = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Vincenzo Cassano\Documents\Library.mdf;Integrated Security=True;Connect Timeout=30";
+    private string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+    private readonly string connectionString;
 
     public int Id { get; set; }
 
@@ -24,11 +26,17 @@ namespace LibraryManagementSystem.Classes
 
     public string? Image { get; set; }
 
+    public DataAllBooks()
+    {
+      string dbPath = Path.Combine(appDirectory, "Library.mdf");
+      connectionString = $@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename={dbPath};Integrated Security=True;Connect Timeout=30";
+    }
+
     public List<DataAllBooks> ShowAllBooksData()
     {
       List<DataAllBooks> ListData = [];
 
-      using SqlConnection Connect = new(_connect);
+      using SqlConnection Connect = new(connectionString);
 
       try
       {

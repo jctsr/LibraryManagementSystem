@@ -10,13 +10,16 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using LibraryManagementSystem.Classes;
 using static System.Net.Mime.MediaTypeNames;
+using Application = System.Windows.Forms.Application;
 using Image = System.Drawing.Image;
 
 namespace LibraryManagementSystem
 {
     public partial class ManageBooksPanel : UserControl
   {
-    private readonly string _connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Vincenzo Cassano\Documents\Library.mdf;Integrated Security=True;Connect Timeout=30";
+    private string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+    private readonly string connectionString;
 
     private MakeForm_ButtonRounded MakeForm_ButtonRounded = new();
 
@@ -25,6 +28,9 @@ namespace LibraryManagementSystem
       InitializeComponent();
 
       DisplayBooks();
+
+      string dbPath = Path.Combine(appDirectory, "Library.mdf");
+      connectionString = $@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename={dbPath};Integrated Security=True;Connect Timeout=30";
 
       this.Region = System.Drawing.Region.FromHrgn(MakeForm_ButtonRounded.CreateRoundRectRgn(0, 0, Width, Height, 18, 18));
 
@@ -126,23 +132,36 @@ namespace LibraryManagementSystem
         MessageBox.Show("Please fill all the blank fields", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
       }
 
-      using SqlConnection Connect = new(_connectionString);
+      using SqlConnection Connect = new(connectionString);
 
       try
       {
         Connect.Open();
 
+        // Get the application's startup directory
+        string appPath = Application.StartupPath;
+
+        // Create a folder called 'Books_Directory' in the application directory
+        string booksDirectory = Path.Combine(appPath, "Books_Directory");
+
+        // Ensure the directory exists
+        if (!Directory.Exists(booksDirectory))
+        {
+          Directory.CreateDirectory(booksDirectory);
+        }
+
+        // Create the path for the image file
+        string imagePath = Path.Combine(booksDirectory, $"{AddTitleTextBox.Text.Trim()}_{AddAuthorTextBox.Text.Trim()}.jpg");
+
         string CheckData = "SELECT COUNT(*) FROM books WHERE title = @title AND author = @author AND image_path = @image_path";
 
-        string path = Path.Combine(@"C:\Users\Vincenzo Cassano\source\repos\LibraryManagementSystem\Books_Directory\" + AddTitleTextBox.Text.Trim() + "_" + AddAuthorTextBox.Text.Trim() + ".jpg");
+        //string path = Path.Combine(@"C:\Users\Vincenzo Cassano\source\repos\LibraryManagementSystem\Books_Directory\" + AddTitleTextBox.Text.Trim() + "_" + AddAuthorTextBox.Text.Trim() + ".jpg");
 
         using SqlCommand CheckCMD = new(CheckData, Connect);
 
-        string? DirectoryPath = Path.GetDirectoryName(path);
-
         CheckCMD.Parameters.AddWithValue("@title", AddTitleTextBox.Text.Trim());
         CheckCMD.Parameters.AddWithValue("@author", AddAuthorTextBox.Text.Trim());
-        CheckCMD.Parameters.AddWithValue("@image_path", path);
+        CheckCMD.Parameters.AddWithValue("@image_path", imagePath);
 
         int count = (int)CheckCMD.ExecuteScalar();
 
@@ -152,22 +171,11 @@ namespace LibraryManagementSystem
           return;
         }
 
-        if (DirectoryPath != null && !Directory.Exists(DirectoryPath))
-        {
-          Directory.CreateDirectory(DirectoryPath);
-        }
-
-        if (File.Exists(path))
-        {
-          MessageBox.Show("The book with this title and author already exists.", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
-          return;
-        }
-
         // Check if BooksPic.ImageLocation is not null
         if (!string.IsNullOrEmpty(BooksPic.ImageLocation))
         {
           // Copy the image file to the target path
-          File.Copy(BooksPic.ImageLocation, path, true);
+          File.Copy(BooksPic.ImageLocation, imagePath, true);
 
           string InsertData = "INSERT INTO books (title, author, published_date, book_status, image_path) VALUES (@title, @author, @published, @status, @image)";
 
@@ -176,7 +184,7 @@ namespace LibraryManagementSystem
           InsertCMD.Parameters.AddWithValue("@author", AddAuthorTextBox.Text.Trim());
           InsertCMD.Parameters.AddWithValue("@published", AddPublishedDateTImePicker.Value);
           InsertCMD.Parameters.AddWithValue("@status", AddStatusBooksComboBox.Text);
-          InsertCMD.Parameters.AddWithValue("@image", path);
+          InsertCMD.Parameters.AddWithValue("@image", imagePath);
 
           InsertCMD.ExecuteNonQuery();
 
@@ -214,13 +222,13 @@ namespace LibraryManagementSystem
 
         if (Result == DialogResult.Yes)
         {
-          using SqlConnection Connect = new(_connectionString);
+          using SqlConnection Connect = new(connectionString);
 
           try
           {
             Connect.Open();
 
-            string UpdateData = "UPDATE books SET title = @title, author = @author, published_date = @published, book_status = @status, date_update = @date_update";
+            string UpdateData = "UPDATE books SET title = @title, author = @author, published_date = @published, book_status = @status, date_update = @date_update WHERE id = @id";
 
             using SqlCommand UpdateCMD = new(UpdateData, Connect);
 
@@ -230,29 +238,6 @@ namespace LibraryManagementSystem
             UpdateCMD.Parameters.AddWithValue("@status", AddStatusBooksComboBox.Text);
             UpdateCMD.Parameters.AddWithValue("@date_update", DateTime.Now);
             UpdateCMD.Parameters.AddWithValue("@id", BookID);
-
-            //if (BooksPic.ImageLocation != null && BooksPic.Image != null)
-            //{
-            //  string path = Path.Combine(@"C:\Users\Vincenzo Cassano\source\repos\LibraryManagementSystem\Books_Directory\",
-            //                               $"{AddTitleTextBox.Text.Trim()}_{AddAuthorTextBox.Text.Trim()}.jpg");
-
-            //  string? DirectoryPath = Path.GetDirectoryName(path);
-
-            //  if(DirectoryPath != null && !Directory.Exists(DirectoryPath))
-            //  {
-            //    Directory.CreateDirectory(path);
-            //  }
-
-            //  File.Copy(BooksPic.ImageLocation, path, true);
-
-            //  UpdateData += ",image_path = @image";
-
-            //  UpdateCMD.Parameters.AddWithValue("@image", path);
-            //}
-
-            UpdateData += " WHERE id = @id";
-
-            UpdateCMD.CommandText = UpdateData;
 
             UpdateCMD.ExecuteNonQuery();
 
@@ -295,7 +280,7 @@ namespace LibraryManagementSystem
 
         if (Result == DialogResult.Yes)
         {
-          using SqlConnection Connect = new(_connectionString);
+          using SqlConnection Connect = new(connectionString);
 
           try
           {

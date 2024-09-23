@@ -1,4 +1,5 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Data.SqlClient;
 using LibraryManagementSystem.Classes;
 
@@ -6,7 +7,11 @@ namespace LibraryManagementSystem
 {
     public partial class RegisterForm : Form
   {
-    SqlConnection connect = new(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Vincenzo Cassano\Documents\Library.mdf;Integrated Security=True;Connect Timeout=30");
+    private string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+    private readonly string connectionString;
+
+    //SqlConnection connect = new(@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Vincenzo Cassano\Documents\Library.mdf;Integrated Security=True;Connect Timeout=30");
 
     private Draggable Draggable = new();
 
@@ -15,6 +20,9 @@ namespace LibraryManagementSystem
     public RegisterForm()
     {
       InitializeComponent();
+
+      string dbPath = Path.Combine(appDirectory, "Library.mdf");
+      connectionString = $@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename={dbPath};Integrated Security=True;Connect Timeout=30";
 
       this.Region = System.Drawing.Region.FromHrgn(MakeForm_ButtonRounded.CreateRoundRectRgn(0, 0, Width, Height, 18, 18));
 
@@ -71,58 +79,55 @@ namespace LibraryManagementSystem
         MessageBox.Show("Please enter a valid email address", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
         return;
       }
-      else
+
+      using SqlConnection connect = new(connectionString);
+
+      try
       {
-        if (connect.State != ConnectionState.Open)
+        connect.Open();
+
+        string CheckUsername = "SELECT COUNT(*) FROM users WHERE username = @username";
+
+        using SqlCommand CheckCMD = new(CheckUsername, connect);
+
+        CheckCMD.Parameters.AddWithValue("@username", UsernameRegisterTextBox.Text.Trim());
+
+        int count = (int)CheckCMD.ExecuteScalar();
+
+        if (count >= 1)
         {
-          try
-          {
-            connect.Open();
-
-            string CheckUsername = "SELECT COUNT(*) FROM users WHERE username = @username";
-
-            using SqlCommand CheckCMD = new(CheckUsername, connect);
-
-            CheckCMD.Parameters.AddWithValue("@username", UsernameRegisterTextBox.Text.Trim());
-
-            int count = (int)CheckCMD.ExecuteScalar();
-
-            if (count >= 1)
-            {
-              MessageBox.Show(UsernameRegisterTextBox.Text.Trim() + " is already taken", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-            else
-            {
-              string InsertData = "INSERT INTO users (email, username, pwd, date_register)" + "VALUES(@email, @username, @password, @date)";
-
-              using SqlCommand InsertCMD = new(InsertData, connect);
-
-              InsertCMD.Parameters.AddWithValue("@email", EmailRegisterTextBox.Text.Trim());
-              InsertCMD.Parameters.AddWithValue("@username", UsernameRegisterTextBox.Text.Trim());
-              InsertCMD.Parameters.AddWithValue("@password", UserRegisterPasswordTextBox.Text.Trim());
-              InsertCMD.Parameters.AddWithValue("@date", DateTime.Now);
-
-              InsertCMD.ExecuteNonQuery();
-
-              MessageBox.Show("Register Successfully!", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-              LoginForm LoginForm = new();
-
-              LoginForm.Show();
-
-              this.Close();
-            }
-
-          }
-          catch (Exception ex)
-          {
-            MessageBox.Show("Error connecting to the Database: " + ex, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
-          }
-          finally
-          {
-            connect.Close();
-          }
+          MessageBox.Show(UsernameRegisterTextBox.Text.Trim() + " is already taken", "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
+        else
+        {
+          string InsertData = "INSERT INTO users (email, username, pwd, date_register)" + "VALUES(@email, @username, @password, @date)";
+
+          using SqlCommand InsertCMD = new(InsertData, connect);
+
+          InsertCMD.Parameters.AddWithValue("@email", EmailRegisterTextBox.Text.Trim());
+          InsertCMD.Parameters.AddWithValue("@username", UsernameRegisterTextBox.Text.Trim());
+          InsertCMD.Parameters.AddWithValue("@password", UserRegisterPasswordTextBox.Text.Trim());
+          InsertCMD.Parameters.AddWithValue("@date", DateTime.Now);
+
+          InsertCMD.ExecuteNonQuery();
+
+          MessageBox.Show("Register Successfully!", "Information Message", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+          LoginForm LoginForm = new();
+
+          LoginForm.Show();
+
+          this.Close();
+        }
+
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show("Error connecting to the Database: " + ex, "Error Message", MessageBoxButtons.OK, MessageBoxIcon.Error);
+      }
+      finally
+      {
+        connect.Close();
       }
     }
 

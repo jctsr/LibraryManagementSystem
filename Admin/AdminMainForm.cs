@@ -14,6 +14,10 @@ namespace LibraryManagementSystem
 {
   public partial class AdminMainForm : Form
   {
+    private string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+    private readonly string connectionString;
+
     private ManageBooksPanel ManageBooksPanel = new();
 
     private IssueBooksPanel IssueBooksPanel = new();
@@ -24,11 +28,12 @@ namespace LibraryManagementSystem
 
     readonly MakeForm_ButtonRounded MakeForm_ButtonRounded = new();
 
-    private readonly string _connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Vincenzo Cassano\Documents\Library.mdf;Integrated Security=True;Connect Timeout=30";
-
     public AdminMainForm()
     {
       InitializeComponent();
+
+      string dbPath = Path.Combine(appDirectory, "Library.mdf");
+      connectionString = $@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename={dbPath};Integrated Security=True;Connect Timeout=30";
 
       Draggable.MakeDraggable(TopPanel);
 
@@ -71,7 +76,7 @@ namespace LibraryManagementSystem
 
     public void DisplayAvailableBooks()
     {
-      using SqlConnection Connect = new(_connectionString);
+      using SqlConnection Connect = new(connectionString);
 
       try
       {
@@ -105,7 +110,7 @@ namespace LibraryManagementSystem
 
     public void DisplayIssuedBooks()
     {
-      using SqlConnection Connect = new(_connectionString);
+      using SqlConnection Connect = new(connectionString);
 
       try
       {
@@ -139,7 +144,7 @@ namespace LibraryManagementSystem
 
     public void DisplayReturnedBooks()
     {
-      using SqlConnection Connect = new(_connectionString);
+      using SqlConnection Connect = new(connectionString);
 
       try
       {
@@ -173,7 +178,7 @@ namespace LibraryManagementSystem
 
     private void ShowUserLabel()
     {
-      using SqlConnection Connect = new(_connectionString);
+      using SqlConnection Connect = new(connectionString);
 
       try
       {
@@ -227,7 +232,7 @@ namespace LibraryManagementSystem
 
       if (result == DialogResult.Yes)
       {
-        using SqlConnection Connect = new(_connectionString);
+        using SqlConnection Connect = new(connectionString);
 
         try
         {
@@ -267,6 +272,11 @@ namespace LibraryManagementSystem
 
       this.Controls.Remove(ReturnBooksPanel);
 
+      DisplayAllBooks();
+      DisplayAvailableBooks();
+      DisplayIssuedBooks();
+      DisplayReturnedBooks();
+
       AdminDisplayPanel.Visible = true;
 
       AllBooksPanel.Visible = true;
@@ -279,11 +289,6 @@ namespace LibraryManagementSystem
       this.Controls.Remove(ReturnBooksPanel);
 
       this.Controls.Add(ManageBooksPanel);
-
-      DisplayAllBooks();
-      DisplayAvailableBooks();
-      DisplayIssuedBooks();
-      DisplayReturnedBooks();
 
       // Get the current DPI scale factor
       float dpiScale = this.DeviceDpi / 96f; // 96 DPI is the default

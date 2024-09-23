@@ -16,6 +16,7 @@ namespace LibraryManagementSystem
     {
       // Call this method to disable DPI scaling and make the app behave as if it's at 100% scale
       SetProcessDPIAware();
+
       // To customize application configuration such as set high DPI settings or default font,
       // see https://aka.ms/applicationconfiguration.
       ApplicationConfiguration.Initialize();

@@ -14,7 +14,9 @@ namespace LibraryManagementSystem
 {
   public partial class ReturnBooksPanel : UserControl
   {
-    private readonly string _connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=C:\Users\Vincenzo Cassano\Documents\Library.mdf;Integrated Security=True;Connect Timeout=30";
+    private string appDirectory = AppDomain.CurrentDomain.BaseDirectory;
+
+    private readonly string connectionString;
 
     private MakeForm_ButtonRounded MakeForm_ButtonRounded = new();
 
@@ -22,11 +24,14 @@ namespace LibraryManagementSystem
     {
       InitializeComponent();
 
+      this.Region = System.Drawing.Region.FromHrgn(MakeForm_ButtonRounded.CreateRoundRectRgn(0, 0, Width, Height, 18, 18));
+
+      string dbPath = Path.Combine(appDirectory, "Library.mdf");
+      connectionString = $@"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename={dbPath};Integrated Security=True;Connect Timeout=30";
+
       DisplayBooks();
 
       DataIssueBookId();
-
-      this.Region = System.Drawing.Region.FromHrgn(MakeForm_ButtonRounded.CreateRoundRectRgn(0, 0, Width, Height, 18, 18));
 
       MakeForm_ButtonRounded.MakeButtonRounded(AddBtn);
       MakeForm_ButtonRounded.MakeButtonRounded(ClearBtn);
@@ -47,7 +52,7 @@ namespace LibraryManagementSystem
 
     public void DataIssueBookId()
     {
-      using SqlConnection Connect = new(_connectionString);
+      using SqlConnection Connect = new(connectionString);
 
       try
       {
@@ -122,7 +127,7 @@ namespace LibraryManagementSystem
         {
           BookID = Convert.ToInt32(SelectedRow["id"]);
 
-          using SqlConnection Connect = new(_connectionString);
+          using SqlConnection Connect = new(connectionString);
 
           try
           {
@@ -224,7 +229,7 @@ namespace LibraryManagementSystem
         return;
       }
 
-      using SqlConnection Connect = new(_connectionString);
+      using SqlConnection Connect = new(connectionString);
 
       try
       {
